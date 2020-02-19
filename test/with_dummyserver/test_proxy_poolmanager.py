@@ -41,11 +41,6 @@ class TestHTTPProxyManager(HTTPDummyProxyTestCase):
         cls.proxy_url = "http://%s:%d" % (cls.proxy_host, cls.proxy_port)
         cls.https_proxy_url = "https://%s:%d" % (cls.proxy_host, cls.https_proxy_port)
 
-        # This URL is used only to test that a warning is
-        # raised due to an improper config. urllib3 doesn't
-        # support HTTPS proxies in v1.25.*
-        cls.https_proxy_url = "https://%s:%d" % (cls.proxy_host, cls.proxy_port)
-
         # Generate another CA to test verification failure
         cls.certs_dir = tempfile.mkdtemp()
         bad_ca = trustme.CA()
@@ -68,7 +63,8 @@ class TestHTTPProxyManager(HTTPDummyProxyTestCase):
 
     @onlyPy3
     def test_https_proxy(self):
-        with proxy_from_url(self.https_proxy_url, ca_certs=DEFAULT_CA) as https:
+        with proxy_from_url(self.https_proxy_url, ca_certs=DEFAULT_CA,
+                            _allow_https_proxy_to_see_traffic=False) as https:
             r = https.request("GET", "%s/" % self.http_url)
             assert r.status == 200
 
@@ -77,7 +73,8 @@ class TestHTTPProxyManager(HTTPDummyProxyTestCase):
 
     @onlyPy2
     def test_https_proxy_not_supported(self):
-        with proxy_from_url(self.https_proxy_url, ca_certs=DEFAULT_CA) as https:
+        with proxy_from_url(self.https_proxy_url, ca_certs=DEFAULT_CA,
+                            _allow_https_proxy_to_see_traffic=False) as https:
             r = https.request("GET", "%s/" % self.http_url)
             assert r.status == 200
 
@@ -325,6 +322,7 @@ class TestHTTPProxyManager(HTTPDummyProxyTestCase):
             headers={"Foo": "bar"},
             proxy_headers={"Hickory": "dickory"},
             ca_certs=DEFAULT_CA,
+            _allow_https_proxy_to_see_traffic=False
         ) as http:
 
             r = http.request_encode_url("GET", "%s/headers" % self.http_url)

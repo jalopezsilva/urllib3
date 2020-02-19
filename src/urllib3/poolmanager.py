@@ -460,7 +460,7 @@ class ProxyManager(PoolManager):
         headers=None,
         proxy_headers=None,
         proxy_ssl_context=None,
-        _allow_https_proxy_to_see_traffic=False,
+        _allow_https_proxy_to_see_traffic=True,
         **connection_pool_kw
     ):
 
