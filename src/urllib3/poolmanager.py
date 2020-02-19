@@ -433,7 +433,7 @@ class ProxyManager(PoolManager):
         num_pools=10,
         headers=None,
         proxy_headers=None,
-        _allow_https_proxy_to_see_traffic=False,
+        _allow_https_proxy_to_see_traffic=True,
         **connection_pool_kw
     ):
 

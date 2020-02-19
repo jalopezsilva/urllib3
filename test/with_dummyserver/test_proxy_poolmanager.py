@@ -61,7 +61,8 @@ class TestHTTPProxyManager(HTTPDummyProxyTestCase):
             assert r.status == 200
 
     def test_https_proxy(self):
-        with proxy_from_url(self.https_proxy_url, ca_certs=DEFAULT_CA) as https:
+        with proxy_from_url(self.https_proxy_url, ca_certs=DEFAULT_CA,
+                            _allow_https_proxy_to_see_traffic=False) as https:
             r = https.request("GET", "%s/" % self.http_url)
             assert r.status == 200
 
@@ -305,6 +306,7 @@ class TestHTTPProxyManager(HTTPDummyProxyTestCase):
             headers={"Foo": "bar"},
             proxy_headers={"Hickory": "dickory"},
             ca_certs=DEFAULT_CA,
+            _allow_https_proxy_to_see_traffic=False
         ) as http:
 
             r = http.request_encode_url("GET", "%s/headers" % self.http_url)
