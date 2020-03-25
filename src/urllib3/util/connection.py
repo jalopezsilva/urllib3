@@ -26,6 +26,31 @@ def is_connection_dropped(conn):  # Platform-specific
         return False
 
 
+def connection_requires_http_tunnel(
+    proxy_url=None, proxy_config=None, destination_scheme=None
+):
+    """
+    Returns True if the connection requires an HTTP CONNECT through the proxy.
+
+    :param destination_url:
+        :URL URL of the destination.
+    :param proxy_url:
+        :URL URL of the proxy.
+    :param proxy_config:
+        :class:`PoolManager.ProxyConfig` proxy configuration
+    """
+    if proxy_url is None or proxy_config is None:
+        return False
+
+    if destination_scheme == "http":
+        return False
+
+    if proxy_url.scheme == "http":
+        return True
+
+    return not proxy_config.allow_insecure_proxy
+
+
 # This function is copied from socket.py in the Python 2.7 standard
 # library test suite. Added to its signature is only `socket_options`.
 # One additional modification is that we avoid binding to IPv6 servers
