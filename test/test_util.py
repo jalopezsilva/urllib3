@@ -28,9 +28,15 @@ from urllib3.exceptions import (
     SNIMissingWarning,
     UnrewindableBodyError,
 )
-from urllib3.util.connection import allowed_gai_family, _has_ipv6
+from urllib3.util.connection import (
+    allowed_gai_family,
+    _has_ipv6,
+    connection_requires_http_tunnel,
+)
 from urllib3.util import is_fp_closed, ssl_
 from urllib3.packages import six
+
+from urllib3.poolmanager import ProxyConfig
 
 from . import clear_warnings
 
@@ -781,7 +787,9 @@ class TestUtil(object):
                     sock=socket,
                     server_hostname="www.google.com",
                 )
-            mock_context.wrap_socket.assert_called_once_with(socket)
+            mock_context.wrap_socket.assert_called_once_with(
+                socket, server_hostname=None
+            )
             assert warn.call_count >= 1
             warnings = [call[0][1] for call in warn.call_args_list]
             assert SNIMissingWarning in warnings
@@ -838,3 +846,27 @@ class TestUtil(object):
     def test_assert_header_parsing_throws_typeerror_with_non_headers(self, headers):
         with pytest.raises(TypeError):
             assert_header_parsing(headers)
+
+    def test_connection_requires_http_tunnel_no_proxy(self):
+        assert not connection_requires_http_tunnel(
+            proxy_url=None, proxy_config=None, destination_scheme=None
+        )
+
+    def test_connection_requires_http_tunnel_http_proxy(self):
+        proxy = parse_url("http://proxy:8080")
+        proxy_config = ProxyConfig(ssl_context=None, allow_insecure_proxy=False)
+        destination_scheme = "http"
+        assert not connection_requires_http_tunnel(
+            proxy, proxy_config, destination_scheme
+        )
+
+        destination_scheme = "https"
+        assert connection_requires_http_tunnel(proxy, proxy_config, destination_scheme)
+
+    def test_connection_requires_http_tunnel_https_proxy(self):
+        proxy = parse_url("https://proxy:8443")
+        proxy_config = ProxyConfig(ssl_context=None, allow_insecure_proxy=False)
+        destination_scheme = "http"
+        assert not connection_requires_http_tunnel(
+            proxy, proxy_config, destination_scheme
+        )
