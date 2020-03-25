@@ -14,6 +14,7 @@ from ..packages import six
 
 
 SSLContext = None
+SSLTransport = None
 HAS_SNI = False
 IS_PYOPENSSL = False
 IS_SECURETRANSPORT = False
@@ -41,6 +42,7 @@ try:  # Test for SSL features
     import ssl
     from ssl import wrap_socket, CERT_REQUIRED
     from ssl import HAS_SNI  # Has SNI?
+    from ..contrib.ssl import SSLTransport
 except ImportError:
     pass
 
@@ -316,6 +318,7 @@ def ssl_wrap_socket(
     ca_cert_dir=None,
     key_password=None,
     ca_cert_data=None,
+    tls_in_tls=False,
 ):
     """
     All arguments except for server_hostname, ssl_context, and ca_cert_dir have
@@ -337,6 +340,8 @@ def ssl_wrap_socket(
     :param ca_cert_data:
         Optional string containing CA certificates in PEM format suitable for
         passing as the cadata parameter to SSLContext.load_verify_locations()
+    :param tls_in_tls:
+        Use SSLTransport of attempting to wrap the existing socket.
     """
     context = ssl_context
     if context is None:
@@ -381,7 +386,7 @@ def ssl_wrap_socket(
         server_hostname is not None and not is_ipaddress(server_hostname)
     ) or IS_SECURETRANSPORT:
         if HAS_SNI and server_hostname is not None:
-            return context.wrap_socket(sock, server_hostname=server_hostname)
+            return _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
 
         warnings.warn(
             "An HTTPS request has been made, but the SNI (Server Name "
@@ -394,7 +399,7 @@ def ssl_wrap_socket(
             SNIMissingWarning,
         )
 
-    return context.wrap_socket(sock)
+    return _ssl_wrap_socket_impl(sock, context, tls_in_tls)
 
 
 def is_ipaddress(hostname):
@@ -419,3 +424,12 @@ def _is_key_file_encrypted(key_file):
                 return True
 
     return False
+
+
+def _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname=None):
+    wrapped_sock = None
+    if tls_in_tls and SSLTransport:
+        wrapped_sock = SSLTransport(sock, context, server_hostname)
+    else:
+        wrapped_sock = context.wrap_socket(sock, server_hostname=server_hostname)
+    return wrapped_sock
