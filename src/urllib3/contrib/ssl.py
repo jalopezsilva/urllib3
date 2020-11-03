@@ -20,7 +20,7 @@ class SSLTransport:
     """
 
     def __init__(
-        self, socket, ssl_context, suppress_ragged_eofs=True, server_hostname=None
+        self, socket, ssl_context, server_hostname=None, suppress_ragged_eofs=True
     ):
         """
         Create an SSLTransport around socket using the provided ssl_context.
