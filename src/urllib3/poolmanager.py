@@ -460,7 +460,8 @@ class ProxyManager(PoolManager):
         headers=None,
         proxy_headers=None,
         proxy_ssl_context=None,
-        _allow_https_proxy_to_see_traffic=False,
+        _allow_https_proxy_to_see_traffic=None,
+        use_forwarding_for_https=True,
         **connection_pool_kw
     ):
 
@@ -478,6 +479,9 @@ class ProxyManager(PoolManager):
         if not proxy.port:
             port = port_by_scheme.get(proxy.scheme, 80)
             proxy = proxy._replace(port=port)
+
+        if _allow_https_proxy_to_see_traffic is None:
+            _allow_https_proxy_to_see_traffic = use_forwarding_for_https
 
         self.proxy = proxy
         self.proxy_headers = proxy_headers or {}
